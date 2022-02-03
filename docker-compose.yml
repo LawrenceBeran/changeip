@@ -1,0 +1,22 @@
+version: "3.7"
+
+services:
+  changeip:
+    image: lawrenceberan/changeip
+    environment:
+      CHANGEIP_USERNAME: "<username>"
+      CHANGEIP_PASSWORD: "<password>"
+      CHANGEIP_RECORD: "<record>"
+      TZ: "Europe/London"
+      PUID: 1000
+      PGID: 1000
+    volumes:
+      - changeip-logs:/var/logs
+
+volumes:
+  changeip-logs:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.2.100,nolock,soft,rw
+      device: ":/export/docker/changeip/logs"
