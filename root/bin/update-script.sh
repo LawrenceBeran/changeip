@@ -39,10 +39,10 @@ LOGPATH=/var/log/changeip.log         # Log file
 TEMP=/tmp/temp                        # Temp storage file
 CIPUSER=$CHANGEIP_USERNAME            # ChangeIP.com Username
 CIPPASS=$CHANGEIP_PASSWORD            # ChangeIP.com Password
-CIPSET=$CHANGEIP_IPSET                # ChangeIP.com recordset
+CIPSET=$CHANGEIP_IPSET                # ChangeIP.com set
 LOGLEVEL=$CHANGEIP_LOGLEVEL           # 0=off,1=normal,2=verbose
 LOGMAX=$CHANGEIP_LOGMAX               # Max log lines, 0=unlimited
-CIPHOST=$CHANGEIP_HOSTNAME            # ChangeIP.com hostname
+CIPHOST=$CHANGEIP_RECORD              # ChangeIP.com hostname
 #################################################################
 
 
@@ -53,44 +53,45 @@ wget -4 -q -U "rinker.sh wget 1.0" -O $TEMP ip.changeip.com
 grep IPADDR < $TEMP | cut -d= -s -f2 | cut -d- -s -f1 > $TMPIP
 
 # get current ChangeIP record value with dig and store in IPPATH
-dig $CHANGEIP_RECORD +short | grep '^[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' > $IPPATH
+dig $CIPHOST +short | grep '^[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' > $IPPATH
 
 # Ensure the logfile exists
 touch $LOGPATH
 
 # compare $IPPATH with $TMPIP, and if different, execute update
-if diff $IPPATH $TMPIP > /dev/null
-  then # same IP, no update
-      if [ $LOGLEVEL -eq 2 ]
-        then # if verbose, log no change
-          echo "--------------------------------" 2>&1 | tee $LOGPATH
-          date 2>&1 | tee $LOGPATH
-          echo "No Change" 2>&1 | tee $LOGPATH
-          echo -e "IP: \c" 2>&1 | tee $LOGPATH
-          cat $IPPATH 2>&1 | tee $LOGPATH
+if diff $IPPATH $TMPIP > /dev/null ; then # same IP, no update
+  if [ $LOGLEVEL -eq 2 ] ; then # if verbose, log no change
+      echo "--------------------------------" 2>&1 | tee -a $LOGPATH
+      date 2>&1 | tee -a $LOGPATH
+      echo "No Change" 2>&1 | tee -a $LOGPATH
+      echo -e "IP: \c" 2>&1 | tee -a $LOGPATH
+      cat $IPPATH 2>&1 | tee -a $LOGPATH
+  fi
+else # different IP, execute update
+  wget -4 -q -U "rinker.sh wget 1.0" -O $TEMP --http-user=$CIPUSER --http-password=$CIPPASS "https://nic.changeip.com/nic/update?cmd=update&hostname=$CIPHOST&set=$CIPSET"
+  if [[ $? -eq 0 ]] ; then
+    if [ $LOGLEVEL -ne 0 ] ; then # if logging, log update
+      echo "--------------------------------" 2>&1 | tee -a $LOGPATH
+      date 2>&1 | tee -a $LOGPATH
+      echo "Updating" 2>&1 | tee -a $LOGPATH
+      echo -e "NewIP: \c" 2>&1 | tee -a $LOGPATH
+      cat $TMPIP 2>&1 | tee -a $LOGPATH
+      if [ $LOGLEVEL -eq 2 ] ; then # verbose logging
+        echo -e "OldIP: \c" 2>&1 | tee -a $LOGPATH
+        cat $IPPATH 2>&1 | tee -a $LOGPATH
+        cat $TEMP 2>&1 | tee -a $LOGPATH # log the ChangeIP.com update reply
       fi
-  else # different IP, execute update
-      wget -4 -q -U "rinker.sh wget 1.0" -O $TEMP --http-user=$CIPUSER --http-password=$CIPPASS "https://nic.changeip.com/nic/update?hostname=*1&system=LinuxStretch&xml=1"
-      if [ $LOGLEVEL -ne 0 ]
-        then # if logging, log update
-          echo "--------------------------------" 2>&1 | tee $LOGPATH
-          date 2>&1 | tee $LOGPATH
-          echo "Updating" 2>&1 | tee $LOGPATH
-          echo -e "NewIP: \c" 2>&1 | tee $LOGPATH
-          cat $TMPIP 2>&1 | tee $LOGPATH
-          if [ $LOGLEVEL -eq 2 ]
-            then # verbose logging
-              echo -e "OldIP: \c" 2>&1 | tee $LOGPATH
-              cat $IPPATH 2>&1 | tee $LOGPATH
-              cat $TEMP 2>&1 | tee $LOGPATH # log the ChangeIP.com update reply
-          fi
-      fi
-      cp $TMPIP $IPPATH # Store new IP
+    fi
+    cp $TMPIP $IPPATH # Store new IP
+  elif [ $LOGLEVEL -ne 0 ] ; then # if logging, log update
+    echo "--------------------------------" 2>&1 | tee -a $LOGPATH
+    date 2>&1 | tee -a $LOGPATH
+    echo "Error updating IP with ChangeIP" 2>&1 | tee -a $LOGPATH
+  fi
 fi
 
 # if $LOGMAX not equal to 0, reduce log size to last $LOGMAX number of lines
-if [ $LOGMAX -ne 0 ]
-  then
+if [ $LOGMAX -ne 0 ] ; then
       tail -n $LOGMAX $LOGPATH > $TEMP
       cp $TEMP $LOGPATH
 fi
