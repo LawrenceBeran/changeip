@@ -61,32 +61,32 @@ touch $LOGPATH
 # compare $IPPATH with $TMPIP, and if different, execute update
 if diff $IPPATH $TMPIP > /dev/null ; then # same IP, no update
   if [ $LOGLEVEL -eq 2 ] ; then # if verbose, log no change
-      echo "--------------------------------" 2>&1 | tee -a $LOGPATH
-      date 2>&1 | tee -a $LOGPATH
-      echo "No Change" 2>&1 | tee -a $LOGPATH
-      echo -e "IP: \c" 2>&1 | tee -a $LOGPATH
+      echo "[INFO] --------------------------------" 2>&1 | tee -a $LOGPATH
+      echo "[INFO] $(date)" 2>&1 | tee -a $LOGPATH
+      echo "[INFO] No Change" 2>&1 | tee -a $LOGPATH
+      echo -e "[INFO] IP: \c" 2>&1 | tee -a $LOGPATH
       cat $IPPATH 2>&1 | tee -a $LOGPATH
   fi
 else # different IP, execute update
   wget -4 -q -U "rinker.sh wget 1.0" -O $TEMP --http-user=$CIPUSER --http-password=$CIPPASS "https://nic.changeip.com/nic/update?cmd=update&hostname=$CIPHOST&set=$CIPSET"
   if [[ $? -eq 0 ]] ; then
     if [ $LOGLEVEL -ne 0 ] ; then # if logging, log update
-      echo "--------------------------------" 2>&1 | tee -a $LOGPATH
-      date 2>&1 | tee -a $LOGPATH
-      echo "Updating" 2>&1 | tee -a $LOGPATH
-      echo -e "NewIP: \c" 2>&1 | tee -a $LOGPATH
+      echo "[NOTICE] --------------------------------" 2>&1 | tee -a $LOGPATH
+      echo "[NOTICE] $(date)" 2>&1 | tee -a $LOGPATH
+      echo "[NOTICE] Updating" 2>&1 | tee -a $LOGPATH
+      echo -e "[NOTICE] NewIP: \c" 2>&1 | tee -a $LOGPATH
       cat $TMPIP 2>&1 | tee -a $LOGPATH
       if [ $LOGLEVEL -eq 2 ] ; then # verbose logging
-        echo -e "OldIP: \c" 2>&1 | tee -a $LOGPATH
+        echo -e "[NOTICE] OldIP: \c" 2>&1 | tee -a $LOGPATH
         cat $IPPATH 2>&1 | tee -a $LOGPATH
         cat $TEMP 2>&1 | tee -a $LOGPATH # log the ChangeIP.com update reply
       fi
     fi
     cp $TMPIP $IPPATH # Store new IP
   elif [ $LOGLEVEL -ne 0 ] ; then # if logging, log update
-    echo "--------------------------------" 2>&1 | tee -a $LOGPATH
-    date 2>&1 | tee -a $LOGPATH
-    echo "Error updating IP with ChangeIP" 2>&1 | tee -a $LOGPATH
+    echo "[ERROR] --------------------------------" 2>&1 | tee -a $LOGPATH
+    echo "[ERROR] $(date)" 2>&1 | tee -a $LOGPATH
+    echo "[ERROR] Error updating IP with ChangeIP" 2>&1 | tee -a $LOGPATH
   fi
 fi
 

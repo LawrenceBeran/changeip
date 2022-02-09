@@ -5,7 +5,7 @@ The script checks the current external IP against the current recorded IP agains
 
 ## Getting Started
 
-These instructions will cover usage information and for the docker container 
+These instructions will cover usage information and for the docker container
 
 ### Prerequisities
 
